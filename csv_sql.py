@@ -117,6 +117,8 @@ def csv_postgresql(
         file,
         schema_name: str = "",
         table_name: str = "",
+        schema_only: bool = False,
+        schema_only_name: str = 'schema_only.sql',
         __encoding: str = 'utf-8') -> None:
     '''
     Converts the csv file into a PostgreSQL *.sql file such that the file contains
@@ -181,15 +183,25 @@ def csv_postgresql(
 
     _table = f'''{drop_string};\n{create_string} (\n{definition_string}\n)'''
 
-    # insert:
-    imain_string = f'''INSERT INTO {schema_name}.{table_name}'''
+    # giving the option to just transform the csv into a create table statement
+    if schema_only:
 
-    icolumns_string = ', '.join(
+        _schema_only = f'''{_schema};\n\n{_table};'''
+
+        with open(schema_only_name, 'w', encoding=__encoding) as output:
+            output.write(_schema_only)
+
+        return None
+
+    # insert:
+    main_string = f'''INSERT INTO {schema_name}.{table_name}'''
+
+    columns_string = ', '.join(
         [f'"{item}"' for item in header])
 
-    ivalues_string = _values_str(file)
+    values_string = _values_str(file)
 
-    _insert = f'''{imain_string}\n\t({icolumns_string})\nVALUES{ivalues_string}'''
+    _insert = f'''{main_string}\n\t({columns_string})\nVALUES{values_string}'''
 
     # OUTPUT STRING
     ouput_string = f'''{_schema};\n\n{_table};\n\n{_insert};'''
